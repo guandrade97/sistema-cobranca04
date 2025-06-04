@@ -1,16 +1,30 @@
 <!DOCTYPE html>
-<html>
-<head><title>Dashboard de Cobranças</title></head>
-<body>
-<h1>Dashboard</h1>
-<a href="/nova_cobranca">Nova cobrança</a>
-<table border="1">
-<tr><th>ID</th><th>Cliente</th><th>Valor</th><th>Vencimento</th><th>Status</th></tr>
-{% for c in cobrancas %}
-<tr>
-<td>{{ c[0] }}</td><td>{{ c[1] }}</td><td>R$ {{ c[2] }}</td><td>{{ c[3] }}</td><td>{{ c[4] }}</td>
-</tr>
-{% endfor %}
-</table>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8" />
+  <title>Dashboard</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 p-6">
+  <div class="max-w-4xl mx-auto">
+    <h1 class="text-3xl font-bold mb-6 text-center text-indigo-600">Painel de Cobrança</h1>
+
+    <div class="grid grid-cols-2 gap-4 mb-6">
+      <div class="bg-white p-4 shadow rounded-xl">
+        <p class="text-gray-500">Cobranças Pendentes</p>
+        <p class="text-2xl font-semibold text-red-600">R$ 3.200</p>
+      </div>
+      <div class="bg-white p-4 shadow rounded-xl">
+        <p class="text-gray-500">Recebido</p>
+        <p class="text-2xl font-semibold text-green-600">R$ 7.800</p>
+      </div>
+    </div>
+
+    <div class="flex justify-center">
+      <a href="/nova-cobranca" class="bg-indigo-600 text-white px-6 py-3 rounded-xl hover:bg-indigo-700 transition">
+        Nova Cobrança
+      </a>
+    </div>
+  </div>
 </body>
 </html>
