@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8" />
+  <title>Cadastro</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 flex items-center justify-center min-h-screen">
+  <div class="bg-white p-8 rounded-lg shadow-lg w-96">
+    <h1 class="text-2xl font-bold mb-6 text-center text-indigo-600">Criar Conta</h1>
+    {% with messages = get_flashed_messages() %}
+      {% if messages %}
+        <div class="mb-4 text-red-600 font-semibold">
+          {{ messages[0] }}
+        </div>
+      {% endif %}
+    {% endwith %}
+    <form method="POST" action="/register" class="space-y-4">
+      <input type="text" name="username" placeholder="Usuário" required
+        class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+      <input type="password" name="password" placeholder="Senha" required
+        class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+      <button type="submit"
+        class="w-full bg-indigo-600 text-white py-2 rounded-lg hover:bg-indigo-700 transition">Cadastrar</button>
+    </form>
+    <p class="mt-4 text-center">
+      Já tem conta? <a href="/login" class="text-indigo-600 hover:underline">Entrar</a>
+    </p>
+  </div>
+</body>
+</html>
