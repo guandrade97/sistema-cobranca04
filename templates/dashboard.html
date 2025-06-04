@@ -7,9 +7,12 @@
 </head>
 <body class="bg-gray-100 p-6">
   <div class="max-w-4xl mx-auto">
-    <h1 class="text-3xl font-bold mb-6 text-center text-indigo-600">
-      Olá, {{ usuario }}!
-    </h1>
+    <p class="text-sm text-gray-600 mb-4">
+      Bem-vindo, <strong>{{ user.id }}</strong>!
+      <a href="{{ url_for('logout') }}" class="text-indigo-600 hover:underline">Sair</a>
+    </p>
+
+    <h1 class="text-3xl font-bold mb-6 text-center text-indigo-600">Painel de Cobrança</h1>
 
     <div class="grid grid-cols-2 gap-4 mb-6">
       <div class="bg-white p-4 shadow rounded-xl">
@@ -22,16 +25,11 @@
       </div>
     </div>
 
-    <div class="flex justify-center mb-6">
+    <div class="flex justify-center">
       <a href="/nova_cobranca" class="bg-indigo-600 text-white px-6 py-3 rounded-xl hover:bg-indigo-700 transition">
         Nova Cobrança
       </a>
     </div>
-
-    <div class="text-center">
-      <a href="/logout" class="text-red-600 hover:underline font-semibold">Sair</a>
-    </div>
   </div>
 </body>
 </html>
-
