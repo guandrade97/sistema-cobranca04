@@ -1,103 +1,36 @@
-from flask import Flask, render_template, request, redirect, url_for, flash
-from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
-from flask_sqlalchemy import SQLAlchemy
-from werkzeug.security import generate_password_hash, check_password_hash
-
-app = Flask(__name__)
-app.secret_key = "sua_chave_secreta"
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///db.sqlite3'
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-
-db = SQLAlchemy(app)
-login_manager = LoginManager()
-login_manager.init_app(app)
-login_manager.login_view = "login"
-
-# Modelos do banco
-class User(UserMixin, db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    username = db.Column(db.String(150), unique=True)
-    password = db.Column(db.String(150))
-
-class Cobranca(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    descricao = db.Column(db.String(200))
-    valor = db.Column(db.Float)
-    usuario_id = db.Column(db.Integer, db.ForeignKey('user.id'))
-
-@login_manager.user_loader
-def load_user(user_id):
+[2025-06-04 20:52:13,385] ERROR in app: Exception on / [GET]
+Traceback (most recent call last):
+  File "/opt/render/project/src/.venv/lib/python3.11/site-packages/flask/app.py", line 2529, in wsgi_app
+    response = self.full_dispatch_request()
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/render/project/src/.venv/lib/python3.11/site-packages/flask/app.py", line 1825, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/render/project/src/.venv/lib/python3.11/site-packages/flask/app.py", line 1823, in full_dispatch_request
+    rv = self.dispatch_request()
+         ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/render/project/src/.venv/lib/python3.11/site-packages/flask/app.py", line 1799, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/render/project/src/.venv/lib/python3.11/site-packages/flask_login/utils.py", line 284, in decorated_view
+    elif not current_user.is_authenticated:
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/render/project/src/.venv/lib/python3.11/site-packages/werkzeug/local.py", line 311, in __get__
+    obj = instance._get_current_object()
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/render/project/src/.venv/lib/python3.11/site-packages/werkzeug/local.py", line 515, in _get_current_object
+    return get_name(local())
+                    ^^^^^^^
+  File "/opt/render/project/src/.venv/lib/python3.11/site-packages/flask_login/utils.py", line 25, in <lambda>
+    current_user = LocalProxy(lambda: _get_user())
+                                      ^^^^^^^^^^^
+  File "/opt/render/project/src/.venv/lib/python3.11/site-packages/flask_login/utils.py", line 372, in _get_user
+    current_app.login_manager._load_user()
+  File "/opt/render/project/src/.venv/lib/python3.11/site-packages/flask_login/login_manager.py", line 364, in _load_user
+    user = self._user_callback(user_id)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/render/project/src/app.py", line 30, in load_user
     return User.query.get(int(user_id))
-
-@app.before_first_request
-def create_tables():
-    db.create_all()
-
-# Rotas de autenticação
-@app.route("/register", methods=["GET", "POST"])
-def register():
-    if request.method == "POST":
-        username = request.form["username"]
-        password = request.form["password"]
-
-        if User.query.filter_by(username=username).first():
-            flash("Usuário já existe")
-            return redirect(url_for("register"))
-
-        new_user = User(username=username, password=generate_password_hash(password, method='sha256'))
-        db.session.add(new_user)
-        db.session.commit()
-        flash("Cadastro feito com sucesso! Faça login.")
-        return redirect(url_for("login"))
-
-    return render_template("register.html")
-
-@app.route("/login", methods=["GET", "POST"])
-def login():
-    if request.method == "POST":
-        username = request.form["username"]
-        password = request.form["password"]
-
-        user = User.query.filter_by(username=username).first()
-        if not user or not check_password_hash(user.password, password):
-            flash("Usuário ou senha incorretos")
-            return redirect(url_for("login"))
-
-        login_user(user)
-        return redirect(url_for("dashboard"))
-
-    return render_template("login.html")
-
-@app.route("/logout")
-@login_required
-def logout():
-    logout_user()
-    return redirect(url_for("login"))
-
-# Dashboard mostrando cobranças do usuário
-@app.route("/")
-@login_required
-def dashboard():
-    cobrancas = Cobranca.query.filter_by(usuario_id=current_user.id).all()
-    total_pendente = sum(c.valor for c in cobrancas)
-    return render_template("dashboard.html", cobrancas=cobrancas, total_pendente=total_pendente, user=current_user)
-
-# Criar nova cobrança
-@app.route("/nova_cobranca", methods=["GET", "POST"])
-@login_required
-def nova_cobranca():
-    if request.method == "POST":
-        descricao = request.form["descricao"]
-        valor = float(request.form["valor"])
-
-        c = Cobranca(descricao=descricao, valor=valor, usuario_id=current_user.id)
-        db.session.add(c)
-        db.session.commit()
-        flash("Cobrança criada com sucesso!")
-        return redirect(url_for("dashboard"))
-
-    return render_template("nova_cobranca.html")
-
-if __name__ == "__main__":
-    app.run(debug=True, port=10000)
-
+                          ^^^^^^^^^^^^
+ValueError: invalid literal for int() with base 10: 'admin'
+127.0.0.1 - - [04/Jun/2025:20:52:13 +0000] "GET / HTTP/1.1" 500 265 "-" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36"
