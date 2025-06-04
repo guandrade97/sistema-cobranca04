@@ -1,39 +1,33 @@
-<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-  <meta charset="UTF-8" />
-  <title>Dashboard</title>
-</head>
-<body>
-  <h2>Olá, {{ user.username }}</h2>
-  <p><a href="{{ url_for('logout') }}">Sair</a></p>
-  
-  <h3>Suas cobranças</h3>
-  <a href="{{ url_for('nova_cobranca') }}">Nova cobrança</a>
-  
-  {% if cobrancas %}
-    <table border="1" cellpadding="5" cellspacing="0">
-      <thead>
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Sistema de Cobrança{% endblock %}
+
+{% block content %}
+<h2>Olá, {{ user.username }}!</h2>
+<p>Total pendente: <strong>R$ {{ "%.2f"|format(total_pendente) }}</strong></p>
+
+<table class="table table-dark table-striped">
+    <thead>
         <tr>
-          <th>Descrição</th>
-          <th>Valor (R$)</th>
+            <th>Descrição</th>
+            <th>Valor (R$)</th>
         </tr>
-      </thead>
-      <tbody>
-        {% for c in cobrancas %}
-          <tr>
-            <td>{{ c.descricao }}</td>
-            <td>{{ "%.2f"|format(c.valor) }}</td>
-          </tr>
+    </thead>
+    <tbody>
+        {% for cobranca in cobrancas %}
+        <tr>
+            <td>{{ cobranca.descricao }}</td>
+            <td>{{ "%.2f"|format(cobranca.valor) }}</td>
+        </tr>
+        {% else %}
+        <tr>
+            <td colspan="2">Nenhuma cobrança encontrada.</td>
+        </tr>
         {% endfor %}
-      </tbody>
-    </table>
-    <p><strong>Total pendente: R$ {{ "%.2f"|format(total_pendente) }}</strong></p>
-  {% else %}
-    <p>Você não tem cobranças.</p>
-  {% endif %}
-  
-</body>
-</html>
+    </tbody>
+</table>
+
+<a href="{{ url_for('nova_cobranca') }}" class="btn btn-primary mt-3">Nova Cobrança</a>
+{% endblock %}
 
 
