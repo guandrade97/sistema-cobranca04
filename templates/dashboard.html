@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html>
+<head><title>Dashboard de Cobranças</title></head>
+<body>
+<h1>Dashboard</h1>
+<a href="/nova_cobranca">Nova cobrança</a>
+<table border="1">
+<tr><th>ID</th><th>Cliente</th><th>Valor</th><th>Vencimento</th><th>Status</th></tr>
+{% for c in cobrancas %}
+<tr>
+<td>{{ c[0] }}</td><td>{{ c[1] }}</td><td>R$ {{ c[2] }}</td><td>{{ c[3] }}</td><td>{{ c[4] }}</td>
+</tr>
+{% endfor %}
+</table>
+</body>
+</html>
