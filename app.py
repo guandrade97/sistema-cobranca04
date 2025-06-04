@@ -1,22 +1,22 @@
-from flask import Flask, render_template, request, redirect
+from flask import Flask, render_template, request, redirect, url_for
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 
 app = Flask(__name__)
-app.secret_key = 'sua_chave_secreta_aqui'  # Pode mudar para uma string segura
+app.secret_key = "sua_chave_secreta"  # Altere para uma chave forte no deploy
 
 login_manager = LoginManager()
 login_manager.init_app(app)
-login_manager.login_view = 'login'
+login_manager.login_view = "login"
 
-# Usuários cadastrados (exemplo simples em memória)
+# Usuários fixos para teste - depois troque por DB
 users = {
-    "admin": {"password": "1234"},
-    "usuario1": {"password": "abcd"},
+    "admin": {"password": "senha123"},
+    "user1": {"password": "abc123"},
 }
 
 class User(UserMixin):
-    def __init__(self, id):
-        self.id = id
+    def __init__(self, username):
+        self.id = username
 
 @login_manager.user_loader
 def load_user(user_id):
@@ -24,52 +24,33 @@ def load_user(user_id):
         return User(user_id)
     return None
 
-@app.route('/login', methods=['GET', 'POST'])
-def login():
-    erro = None
-    if request.method == 'POST':
-        username = request.form['username']
-        password = request.form['password']
-        if username in users and users[username]['password'] == password:
-            user = User(username)
-            login_user(user)
-            return redirect('/')
-        else:
-            erro = "Usuário ou senha inválidos"
-    return render_template('login.html', erro=erro)
+@app.route("/")
+@login_required
+def dashboard():
+    return render_template("dashboard.html", user=current_user)
 
-@app.route('/logout')
+@app.route("/login", methods=["GET", "POST"])
+def login():
+    if request.method == "POST":
+        username = request.form["username"]
+        password = request.form["password"]
+
+        user = users.get(username)
+        if user and user["password"] == password:
+            user_obj = User(username)
+            login_user(user_obj)
+            return redirect(url_for("dashboard"))
+        else:
+            return "Usuário ou senha incorretos", 401
+
+    return render_template("login.html")
+
+@app.route("/logout")
 @login_required
 def logout():
     logout_user()
-    return redirect('/login')
+    return redirect(url_for("login"))
 
-@app.route('/')
-@login_required
-def dashboard():
-    return render_template('dashboard.html', usuario=current_user.id)
-
-@app.route('/nova_cobranca', methods=['GET', 'POST'])
-@login_required
-def nova_cobranca():
-    if request.method == 'POST':
-        nome = request.form['nome']
-        email = request.form['email']
-        valor_str = request.form['valor']
-
-        if not valor_str:
-            return "Erro: o campo valor é obrigatório", 400
-
-        try:
-            valor = float(valor_str)
-        except ValueError:
-            return "Erro: valor inválido", 400
-
-        # Aqui futuramente salvaremos no banco de dados
-        return redirect('/')
-
-    return render_template('nova_cobranca.html')
-
-if __name__ == '__main__':
+if __name__ == "__main__":
     app.run(debug=True, port=10000)
 
