@@ -22,7 +22,7 @@
         <strong>Atenção!</strong> Você tem {{ parcelas_proximas|length }} parcelas próximas do vencimento:
         <ul>
           {% for p in parcelas_proximas %}
-            <li>{{ p.cobranca.nome_cliente }} - Vence em {{ p.data_vencimento.strftime("%d/%m/%Y") }}</li>
+           <li>{{ p.cobranca.nome_cliente }} - Vence em {{ p.vencimento.strftime("%d/%m/%Y") }}</li>
           {% endfor %}
         </ul>
     </div>
