@@ -2,7 +2,7 @@ from flask import Flask, render_template, request, redirect, url_for, flash
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
-from datetime import date
+from datetime import date, datetime
 from dateutil.relativedelta import relativedelta
 from apscheduler.schedulers.background import BackgroundScheduler
 
@@ -58,7 +58,7 @@ def load_user(user_id):
 def create_tables():
     db.create_all()
 
-# ROTAS
+# ROTAS DE AUTENTICAÇÃO
 @app.route("/login", methods=["GET", "POST"])
 def login():
     if request.method == "POST":
@@ -81,6 +81,32 @@ def logout():
     logout_user()
     return redirect(url_for("login"))
 
+@app.route("/register", methods=["GET", "POST"])
+def register():
+    if request.method == "POST":
+        username = request.form["username"]
+        password = request.form["password"]
+        confirm_password = request.form["confirm_password"]
+
+        if password != confirm_password:
+            flash("As senhas não coincidem.")
+            return redirect(url_for("register"))
+
+        existing_user = User.query.filter_by(username=username).first()
+        if existing_user:
+            flash("Nome de usuário já está em uso.")
+            return redirect(url_for("register"))
+
+        hashed_password = generate_password_hash(password, method="sha256")
+        new_user = User(username=username, password=hashed_password)
+        db.session.add(new_user)
+        db.session.commit()
+        flash("Conta criada com sucesso! Faça login.")
+        return redirect(url_for("login"))
+
+    return render_template("register.html")
+
+# DASHBOARD
 @app.route("/")
 @login_required
 def dashboard():
@@ -88,6 +114,7 @@ def dashboard():
     total_pendente = sum(c.valor for c in cobrancas)
     return render_template("dashboard.html", cobrancas=cobrancas, total_pendente=total_pendente, user=current_user)
 
+# NOVA COBRANÇA
 @app.route("/nova_cobranca", methods=["GET", "POST"])
 @login_required
 def nova_cobranca():
@@ -128,13 +155,22 @@ def nova_cobranca():
 
     return render_template("nova_cobranca.html")
 
+# LISTAR PARCELAS
+@app.route("/parcelas")
+@login_required
+def listar_parcelas():
+    parcelas = Parcela.query.filter_by(usuario_id=current_user.id).order_by(Parcela.vencimento).all()
+    return render_template("parcelas.html", parcelas=parcelas, now=date.today())
+
+# NOVA PARCELA
 @app.route("/nova_parcela", methods=["GET", "POST"])
 @login_required
 def nova_parcela():
     if request.method == "POST":
         cobranca_id = request.form["cobranca_id"]
         valor = float(request.form["valor"])
-        vencimento = request.form["vencimento"]
+        vencimento_str = request.form["vencimento"]
+        vencimento = datetime.strptime(vencimento_str, "%Y-%m-%d").date()
 
         # Definir o número da nova parcela
         ult_parcela = Parcela.query.filter_by(cobranca_id=cobranca_id).order_by(Parcela.numero.desc()).first()
@@ -157,12 +193,7 @@ def nova_parcela():
     cobrancas = Cobranca.query.filter_by(usuario_id=current_user.id).all()
     return render_template("nova_parcela.html", cobrancas=cobrancas)
 
-@app.route("/parcelas")
-@login_required
-def listar_parcelas():
-    parcelas = Parcela.query.filter_by(usuario_id=current_user.id).order_by(Parcela.vencimento).all()
-    return render_template("parcelas.html", parcelas=parcelas)
-
+# MARCAR PARCELA COMO PAGA
 @app.route("/parcela/pagar/<int:parcela_id>")
 @login_required
 def pagar_parcela(parcela_id):
@@ -175,30 +206,40 @@ def pagar_parcela(parcela_id):
     flash(f"Parcela {parcela.numero} marcada como paga.")
     return redirect(url_for("listar_parcelas"))
 
-@app.route("/register", methods=["GET", "POST"])
-def register():
+# EDITAR PARCELA
+@app.route("/parcela/editar/<int:parcela_id>", methods=["GET", "POST"])
+@login_required
+def editar_parcela(parcela_id):
+    parcela = Parcela.query.get_or_404(parcela_id)
+    if parcela.usuario_id != current_user.id:
+        flash("Acesso negado.")
+        return redirect(url_for("listar_parcelas"))
+
     if request.method == "POST":
-        username = request.form["username"]
-        password = request.form["password"]
-        confirm_password = request.form["confirm_password"]
+        try:
+            parcela.valor = float(request.form["valor"])
+            parcela.vencimento = datetime.strptime(request.form["vencimento"], "%Y-%m-%d").date()
+            db.session.commit()
+            flash("Parcela atualizada com sucesso.")
+            return redirect(url_for("listar_parcelas"))
+        except Exception as e:
+            flash("Erro ao atualizar parcela.")
+            return redirect(url_for("editar_parcela", parcela_id=parcela_id))
 
-        if password != confirm_password:
-            flash("As senhas não coincidem.")
-            return redirect(url_for("register"))
+    return render_template("editar_parcela.html", parcela=parcela)
 
-        existing_user = User.query.filter_by(username=username).first()
-        if existing_user:
-            flash("Nome de usuário já está em uso.")
-            return redirect(url_for("register"))
-
-        hashed_password = generate_password_hash(password, method="sha256")
-        new_user = User(username=username, password=hashed_password)
-        db.session.add(new_user)
-        db.session.commit()
-        flash("Conta criada com sucesso! Faça login.")
-        return redirect(url_for("login"))
-
-    return render_template("register.html")
+# EXCLUIR PARCELA
+@app.route("/parcela/excluir/<int:parcela_id>")
+@login_required
+def excluir_parcela(parcela_id):
+    parcela = Parcela.query.get_or_404(parcela_id)
+    if parcela.usuario_id != current_user.id:
+        flash("Acesso negado.")
+        return redirect(url_for("listar_parcelas"))
+    db.session.delete(parcela)
+    db.session.commit()
+    flash(f"Parcela {parcela.numero} excluída com sucesso.")
+    return redirect(url_for("listar_parcelas"))
 
 # ENVIOS AUTOMÁTICOS
 def enviar_cobrancas():
