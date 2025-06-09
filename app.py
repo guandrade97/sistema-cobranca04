@@ -164,7 +164,8 @@ def listar_parcelas():
     return render_template("parcelas.html", parcelas=parcelas, now=date.today())
 
 # NOVA PARCELA
-@app.route("/nova_parcela", methods=["GET", "POST"])
+
+        @app.route("/nova_parcela", methods=["GET", "POST"])
 @login_required
 def nova_parcela():
     if request.method == "POST":
@@ -193,6 +194,7 @@ def nova_parcela():
 
     cobrancas = Cobranca.query.filter_by(usuario_id=current_user.id).all()
     return render_template("nova_parcela.html", cobrancas=cobrancas)
+
 
 # MARCAR PARCELA COMO PAGA
 @app.route("/parcela/pagar/<int:parcela_id>")
