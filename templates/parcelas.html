@@ -1,44 +1,61 @@
-{% extends "base.html" %}
-{% block content %}
-<div class="max-w-4xl mx-auto mt-10 p-6">
-    <h2 class="text-2xl font-bold text-white mb-4">Parcelas de {{ cobranca.nome_cliente }}</h2>
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Parcelas</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="bg-dark text-white">
 
-    <table class="w-full bg-gray-800 text-white rounded-xl">
+<nav class="navbar navbar-expand-lg navbar-dark bg-secondary px-4">
+  <a class="navbar-brand" href="{{ url_for('dashboard') }}">Sistema de Cobranças</a>
+</nav>
+
+<div class="container mt-4">
+    <h2 class="mb-4">Parcelas</h2>
+    <a href="{{ url_for('nova_parcela') }}" class="btn btn-success mb-3">Adicionar Parcela</a>
+
+    <table class="table table-dark table-striped">
         <thead>
-            <tr class="bg-gray-700">
-                <th class="p-3 text-left">#</th>
-                <th class="p-3 text-left">Data de Vencimento</th>
-                <th class="p-3 text-left">Valor (R$)</th>
-                <th class="p-3 text-left">Status</th>
-                <th class="p-3 text-left">Ação</th>
+            <tr>
+                <th>Cliente</th>
+                <th>Descrição</th>
+                <th>Valor</th>
+                <th>Data Vencimento</th>
+                <th>Status</th>
+                <th>Ações</th>
             </tr>
         </thead>
         <tbody>
             {% for parcela in parcelas %}
-            <tr class="border-b border-gray-700">
-                <td class="p-3">{{ loop.index }}</td>
-                <td class="p-3">{{ parcela.data_vencimento.strftime('%d/%m/%Y') }}</td>
-                <td class="p-3">R$ {{ "%.2f"|format(parcela.valor) }}</td>
-                <td class="p-3">
-                    {% if parcela.status == "paga" %}
-                        <span class="text-green-400">Paga</span>
-                    {% else %}
-                        <span class="text-red-400">Pendente</span>
-                    {% endif %}
+            <tr>
+                <td>{{ parcela.cobranca.nome_cliente }}</td>
+                <td>{{ parcela.cobranca.descricao }}</td>
+                <td>R$ {{ "%.2f"|format(parcela.valor) }}</td>
+                <td>{{ parcela.vencimento.strftime("%d/%m/%Y") }}</td>
+                <td>
+                  {% if parcela.paga %}
+                    <span class="badge bg-success">Paga</span>
+                  {% elif parcela.vencimento < now %}
+                    <span class="badge bg-danger">Vencida</span>
+                  {% else %}
+                    <span class="badge bg-warning text-dark">Pendente</span>
+                  {% endif %}
                 </td>
-                <td class="p-3">
-                    {% if parcela.status != "paga" %}
-                    <form action="{{ url_for('marcar_parcela_paga', parcela_id=parcela.id) }}" method="POST">
-                        <button type="submit" class="bg-green-500 hover:bg-green-600 px-3 py-1 rounded text-white text-sm">Marcar como paga</button>
-                    </form>
-                    {% else %}
-                        ---
-                    {% endif %}
+                <td>
+                  <!-- Você pode adicionar botões para marcar pagamento, editar, etc -->
                 </td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="6" class="text-center">Nenhuma parcela cadastrada.</td>
             </tr>
             {% endfor %}
         </tbody>
     </table>
 </div>
-{% endblock %}
+
+</body>
+</html>
+
 
