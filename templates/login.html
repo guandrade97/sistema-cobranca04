@@ -1,17 +1,29 @@
-{% extends "base.html" %}
-{% block title %}Login{% endblock %}
-{% block content %}
-<h2>Entrar</h2>
-<form method="POST">
-    <label for="username">Usuário:</label>
-    <input type="text" name="username" required>
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Login</title>
+</head>
+<body>
+    <h2>Login</h2>
+    <form method="POST">
+        <label>Usuário:</label>
+        <input type="text" name="username" required><br><br>
+        <label>Senha:</label>
+        <input type="password" name="password" required><br><br>
+        <button type="submit">Entrar</button>
+    </form>
 
-    <label for="password">Senha:</label>
-    <input type="password" name="password" required>
+    <p>Não tem conta? <a href="{{ url_for('register') }}">Registre-se aqui</a></p>
 
-    <button type="submit" class="btn">Login</button>
-</form>
-
-{# <p>Não tem conta? <a href="{{ url_for('register') }}">Cadastre-se</a></p> #}
-<p>Não tem conta? Entre em contato com o administrador.</p>
-{% endblock %}
+    {% with messages = get_flashed_messages() %}
+      {% if messages %}
+        <ul>
+          {% for msg in messages %}
+            <li>{{ msg }}</li>
+          {% endfor %}
+        </ul>
+      {% endif %}
+    {% endwith %}
+</body>
+</html>
