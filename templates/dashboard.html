@@ -19,7 +19,8 @@
     <h2 class="mb-4">Cobranças</h2>
 
     <a href="{{ url_for('nova_cobranca') }}" class="btn btn-success mb-3">Nova Cobrança</a>
-    <a href="{{ url_for('parcelas') }}" class="btn btn-info mb-3 ms-2">Ver Parcelas</a>
+  <a href="{{ url_for('listar_parcelas') }}" class="btn btn-info mb-3 ms-2">Ver Parcelas</a>
+
 
     <div class="row row-cols-1 row-cols-md-2 g-4">
         {% for cobranca in cobrancas %}
