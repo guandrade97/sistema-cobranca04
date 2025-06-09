@@ -2,6 +2,7 @@
 {% block content %}
 <div class="max-w-4xl mx-auto mt-10 p-6">
     <h2 class="text-2xl font-bold text-white mb-4">Parcelas de {{ cobranca.nome_cliente }}</h2>
+
     <table class="w-full bg-gray-800 text-white rounded-xl">
         <thead>
             <tr class="bg-gray-700">
@@ -9,6 +10,7 @@
                 <th class="p-3 text-left">Data de Vencimento</th>
                 <th class="p-3 text-left">Valor (R$)</th>
                 <th class="p-3 text-left">Status</th>
+                <th class="p-3 text-left">Ação</th>
             </tr>
         </thead>
         <tbody>
@@ -24,9 +26,19 @@
                         <span class="text-red-400">Pendente</span>
                     {% endif %}
                 </td>
+                <td class="p-3">
+                    {% if parcela.status != "paga" %}
+                    <form action="{{ url_for('marcar_parcela_paga', parcela_id=parcela.id) }}" method="POST">
+                        <button type="submit" class="bg-green-500 hover:bg-green-600 px-3 py-1 rounded text-white text-sm">Marcar como paga</button>
+                    </form>
+                    {% else %}
+                        ---
+                    {% endif %}
+                </td>
             </tr>
             {% endfor %}
         </tbody>
     </table>
 </div>
 {% endblock %}
+
