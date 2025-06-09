@@ -98,7 +98,8 @@ def nova_cobranca():
         return redirect(url_for("dashboard"))
 
     return render_template("nova_cobranca.html")
-    @app.route("/register", methods=["GET", "POST"])
+
+@app.route("/register", methods=["GET", "POST"])
 def register():
     if request.method == "POST":
         username = request.form["username"].strip()
@@ -122,5 +123,6 @@ def register():
         return redirect(url_for("login"))
 
     return render_template("register.html")
+
 
 
