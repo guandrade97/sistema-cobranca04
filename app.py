@@ -2,6 +2,7 @@ from flask import Flask, render_template, request, redirect, url_for, flash
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
+from datetime import date
 
 app = Flask(__name__)
 app.secret_key = "sua_chave_secreta"
@@ -31,6 +32,17 @@ class Cobranca(db.Model):
     whatsapp = db.Column(db.String(20))
     parcelas = db.Column(db.Integer)
     usuario_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+
+class Parcela(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    cobranca_id = db.Column(db.Integer, db.ForeignKey('cobranca.id'), nullable=False)
+    numero = db.Column(db.Integer, nullable=False)
+    valor = db.Column(db.Float, nullable=False)
+    vencimento = db.Column(db.Date, nullable=False)
+    pago = db.Column(db.Boolean, default=False)
+    data_pagamento = db.Column(db.Date, nullable=True)
+
+    cobranca = db.relationship('Cobranca', backref=db.backref('parcelas', lazy=True))
 
 @login_manager.user_loader
 def load_user(user_id):
@@ -94,6 +106,7 @@ def nova_cobranca():
         )
         db.session.add(c)
         db.session.commit()
+
         flash("Cobrança criada com sucesso!")
         return redirect(url_for("dashboard"))
 
