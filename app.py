@@ -2,7 +2,8 @@ from flask import Flask, render_template, request, redirect, url_for, flash
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
-from datetime import datetime, timedelta
+from datetime import date
+from dateutil.relativedelta import relativedelta
 from apscheduler.schedulers.background import BackgroundScheduler
 
 app = Flask(__name__)
@@ -15,11 +16,14 @@ login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = "login"
 
-# Modelos
+# Models
 class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(150), unique=True)
     password = db.Column(db.String(150))
+
+    def get_id(self):
+        return str(self.id)
 
 class Cobranca(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -31,16 +35,23 @@ class Cobranca(db.Model):
     parcelas = db.Column(db.Integer)
     usuario_id = db.Column(db.Integer, db.ForeignKey('user.id'))
 
+    parcelas_rel = db.relationship('Parcela', backref='cobranca', lazy=True)
+
 class Parcela(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     cobranca_id = db.Column(db.Integer, db.ForeignKey('cobranca.id'))
-    data_vencimento = db.Column(db.Date)
+    numero = db.Column(db.Integer)
     valor = db.Column(db.Float)
-    status = db.Column(db.String(20), default="pendente")  # pendente, paga
+    vencimento = db.Column(db.Date)
+    paga = db.Column(db.Boolean, default=False)
+    usuario_id = db.Column(db.Integer, db.ForeignKey('user.id'))
 
 @login_manager.user_loader
 def load_user(user_id):
-    return User.query.get(int(user_id))
+    try:
+        return User.query.get(int(user_id))
+    except (ValueError, TypeError):
+        return None
 
 @app.before_first_request
 def create_tables():
@@ -81,16 +92,15 @@ def nova_cobranca():
     if request.method == "POST":
         nome_cliente = request.form["nome_cliente"]
         descricao = request.form["descricao"]
-        valor_total = float(request.form["valor"])
+        valor = float(request.form["valor"])
         parcelas = int(request.form["parcelas"])
         email = request.form["email"]
         whatsapp = request.form["whatsapp"]
-        primeira_data = datetime.strptime(request.form["data_primeira_parcela"], "%Y-%m-%d").date()
 
         c = Cobranca(
             nome_cliente=nome_cliente,
             descricao=descricao,
-            valor=valor_total,
+            valor=valor,
             parcelas=parcelas,
             email=email,
             whatsapp=whatsapp,
@@ -99,95 +109,59 @@ def nova_cobranca():
         db.session.add(c)
         db.session.commit()
 
-        valor_parcela = round(valor_total / parcelas, 2)
-        for i in range(parcelas):
-            data_venc = primeira_data + timedelta(days=30 * i)
-            p = Parcela(cobranca_id=c.id, data_vencimento=data_venc, valor=valor_parcela)
-            db.session.add(p)
-
+        # Criar parcelas com vencimento mensal
+        for i in range(1, parcelas + 1):
+            parcela = Parcela(
+                cobranca_id=c.id,
+                numero=i,
+                valor=round(valor / parcelas, 2),
+                vencimento=date.today() + relativedelta(months=i - 1),
+                paga=False,
+                usuario_id=current_user.id
+            )
+            db.session.add(parcela)
         db.session.commit()
+
         flash("Cobrança e parcelas criadas com sucesso!")
         return redirect(url_for("dashboard"))
 
     return render_template("nova_cobranca.html")
-@app.route("/parcela/<int:parcela_id>/pagar", methods=["POST"])
+
+@app.route("/parcelas")
 @login_required
-def marcar_parcela_paga(parcela_id):
+def listar_parcelas():
+    parcelas = Parcela.query.filter_by(usuario_id=current_user.id).order_by(Parcela.vencimento).all()
+    return render_template("parcelas.html", parcelas=parcelas)
+
+@app.route("/parcela/pagar/<int:parcela_id>")
+@login_required
+def pagar_parcela(parcela_id):
     parcela = Parcela.query.get_or_404(parcela_id)
-
-    # Verifica se a parcela pertence a uma cobrança do usuário logado
-    if parcela.cobranca.usuario_id != current_user.id:
-        flash("Você não tem permissão para alterar essa parcela.")
-        return redirect(url_for("dashboard"))
-
-    parcela.status = "paga"
+    if parcela.usuario_id != current_user.id:
+        flash("Acesso negado.")
+        return redirect(url_for("listar_parcelas"))
+    parcela.paga = True
     db.session.commit()
-    flash("Parcela marcada como paga.")
-    return redirect(url_for("ver_parcelas", cobranca_id=parcela.cobranca_id))
+    flash(f"Parcela {parcela.numero} marcada como paga.")
+    return redirect(url_for("listar_parcelas"))
 
-
-@app.route("/register", methods=["GET", "POST"])
-def register():
-    if request.method == "POST":
-        username = request.form["username"].strip()
-        password = request.form["password"]
-        confirm_password = request.form["confirm_password"]
-
-        if password != confirm_password:
-            flash("As senhas não conferem.")
-            return redirect(url_for("register"))
-
-        if User.query.filter_by(username=username).first():
-            flash("Nome de usuário já está em uso.")
-            return redirect(url_for("register"))
-
-        hashed_password = generate_password_hash(password, method="sha256")
-        new_user = User(username=username, password=hashed_password)
-        db.session.add(new_user)
-        db.session.commit()
-
-        flash("Usuário registrado com sucesso. Faça login.")
-        return redirect(url_for("login"))
-
-    return render_template("register.html")
-
-# === Simulação do envio de mensagens (print no terminal) ===
-def enviar_mensagem(destino, mensagem):
-    print(f"[MENSAGEM] Para: {destino} | Texto: {mensagem}")
-
-# === Agendador automático para cobrança ===
-def verificar_cobrancas():
-    hoje = datetime.today().date()
-    dias_antes = [5, 4, 3, 2, 1, 0]
-
-    parcelas = Parcela.query.filter_by(status="pendente").all()
+def enviar_cobrancas():
+    hoje = date.today()
+    parcelas = Parcela.query.filter_by(paga=False).all()
     for p in parcelas:
-        dias_para_vencer = (p.data_vencimento - hoje).days
-        dias_vencida = (hoje - p.data_vencimento).days
+        dias_para_vencer = (p.vencimento - hoje).days
+        if dias_para_vencer in [5, 4, 3, 2, 1, 0]:
+            print(f"[AVISO] Enviar mensagem para {p.cobranca.nome_cliente}: Parcela {p.numero} vence em {dias_para_vencer} dia(s).")
+        elif dias_para_vencer < 0:
+            dias_atraso = abs(dias_para_vencer)
+            print(f"[ATENÇÃO] Enviar mensagem para {p.cobranca.nome_cliente}: Parcela {p.numero} está vencida há {dias_atraso} dia(s).")
 
-        cobranca = Cobranca.query.get(p.cobranca_id)
-        nome = cobranca.nome_cliente
-
-        if dias_para_vencer in dias_antes:
-            msg = f"Olá, {nome}. Sua parcela vence em {dias_para_vencer} dia(s). Por favor, efetue o pagamento."
-            enviar_mensagem(cobranca.whatsapp, msg)
-
-        if dias_para_vencer == 0:
-            msg = f"Olá, {nome}. Hoje é o vencimento da sua parcela. Evite juros, pague hoje!"
-            enviar_mensagem(cobranca.whatsapp, msg)
-
-        if dias_vencida > 0:
-            msg = f"Olá, {nome}. Sua parcela venceu há {dias_vencida} dia(s). Por favor, regularize o quanto antes."
-            enviar_mensagem(cobranca.whatsapp, msg)
-
-# Iniciar agendador ao iniciar app
 scheduler = BackgroundScheduler()
-scheduler.add_job(verificar_cobrancas, 'interval', hours=24)
+scheduler.add_job(func=enviar_cobrancas, trigger="interval", hours=24)
 scheduler.start()
 
 if __name__ == "__main__":
     app.run(debug=True)
-
 
 
 
