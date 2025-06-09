@@ -22,12 +22,16 @@ class User(UserMixin, db.Model):
     # Certifique-se de que get_id retorna o id numérico como string
     def get_id(self):
         return str(self.id)
-
 class Cobranca(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     descricao = db.Column(db.String(200))
     valor = db.Column(db.Float)
+    nome_cliente = db.Column(db.String(150))
+    email = db.Column(db.String(150))
+    whatsapp = db.Column(db.String(20))
+    parcelas = db.Column(db.Integer)
     usuario_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+
 
 @login_manager.user_loader
 def load_user(user_id):
