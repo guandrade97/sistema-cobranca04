@@ -121,7 +121,7 @@ def nova_cobranca():
     if request.method == "POST":
         nome_cliente = request.form["nome_cliente"]
         descricao = request.form["descricao"]
-        valor = float(request.form["valor"])
+        valor = float(request.form["valor"])  # valor da parcela, não total
         parcelas = int(request.form["parcelas"])
         email = request.form["email"]
         whatsapp = request.form["whatsapp"]
@@ -129,7 +129,7 @@ def nova_cobranca():
         c = Cobranca(
             nome_cliente=nome_cliente,
             descricao=descricao,
-            valor=valor,
+            valor=valor,  # aqui salva o valor da parcela
             parcelas=parcelas,
             email=email,
             whatsapp=whatsapp,
@@ -142,7 +142,7 @@ def nova_cobranca():
             parcela = Parcela(
                 cobranca_id=c.id,
                 numero=i,
-                valor=round(valor / parcelas, 2),
+                valor=valor,  # usa o valor informado, sem dividir
                 vencimento=date.today() + relativedelta(months=i - 1),
                 paga=False,
                 usuario_id=current_user.id
@@ -154,6 +154,7 @@ def nova_cobranca():
         return redirect(url_for("dashboard"))
 
     return render_template("nova_cobranca.html")
+
 
 # LISTAR PARCELAS
 @app.route("/parcelas")
