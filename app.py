@@ -110,9 +110,53 @@ def register():
 @app.route("/")
 @login_required
 def dashboard():
+    from collections import defaultdict
+    from datetime import timedelta
+
+    # Buscar cobranças do usuário
     cobrancas = Cobranca.query.filter_by(usuario_id=current_user.id).all()
-    total_pendente = sum(c.valor for c in cobrancas)
-    return render_template("dashboard.html", cobrancas=cobrancas, total_pendente=total_pendente, user=current_user)
+
+    # Receitas por mês (somente parcelas pagas)
+    receitas = defaultdict(float)
+    parcelas_pagas = (
+        Parcela.query
+        .filter_by(usuario_id=current_user.id, paga=True)
+        .order_by(Parcela.vencimento)
+        .all()
+    )
+    for p in parcelas_pagas:
+        mes = p.vencimento.strftime("%Y-%m")
+        receitas[mes] += p.valor
+
+    meses = sorted(receitas.keys())
+    valores = [receitas[mes] for mes in meses]
+
+    # Total pendente (somente parcelas não pagas)
+    total_pendente = sum(p.valor for p in Parcela.query.filter_by(usuario_id=current_user.id, paga=False).all())
+
+    # Parcelas próximas do vencimento (0 a 5 dias)
+    hoje = date.today()
+    limite = hoje + timedelta(days=5)
+    parcelas_proximas = (
+        Parcela.query
+        .filter(
+            Parcela.usuario_id == current_user.id,
+            Parcela.paga == False,
+            Parcela.vencimento <= limite
+        )
+        .order_by(Parcela.vencimento)
+        .all()
+    )
+
+    return render_template(
+        "dashboard.html",
+        user=current_user,
+        cobrancas=cobrancas,
+        total_pendente=total_pendente,
+        parcelas_proximas=parcelas_proximas,
+        meses=meses,
+        valores=valores
+    )
 
 # NOVA COBRANÇA
 @app.route("/nova_cobranca", methods=["GET", "POST"])
