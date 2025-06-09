@@ -43,7 +43,11 @@
                   {% endif %}
                 </td>
                 <td>
-                  <!-- Você pode adicionar botões para marcar pagamento, editar, etc -->
+                  {% if not parcela.paga %}
+                  <a href="{{ url_for('pagar_parcela', parcela_id=parcela.id) }}" class="btn btn-sm btn-success mb-1">Marcar como Paga</a>
+                  {% endif %}
+                  <a href="{{ url_for('editar_parcela', parcela_id=parcela.id) }}" class="btn btn-sm btn-primary mb-1">Editar</a>
+                  <a href="{{ url_for('excluir_parcela', parcela_id=parcela.id) }}" class="btn btn-sm btn-danger mb-1" onclick="return confirm('Confirma exclusão da parcela?');">Excluir</a>
                 </td>
             </tr>
             {% else %}
@@ -54,15 +58,9 @@
         </tbody>
     </table>
 </div>
-<td>
-  {% if not parcela.paga %}
-  <a href="{{ url_for('pagar_parcela', parcela_id=parcela.id) }}" class="btn btn-sm btn-success mb-1">Marcar como Paga</a>
-  {% endif %}
-  <a href="{{ url_for('editar_parcela', parcela_id=parcela.id) }}" class="btn btn-sm btn-primary mb-1">Editar</a>
-  <a href="{{ url_for('excluir_parcela', parcela_id=parcela.id) }}" class="btn btn-sm btn-danger mb-1" onclick="return confirm('Confirma exclusão da parcela?');">Excluir</a>
-</td>
 
 </body>
 </html>
+
 
 
