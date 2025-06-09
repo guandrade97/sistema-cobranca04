@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
-    <meta charset="UTF-8">
+    <meta charset="UTF-8" />
     <title>Dashboard</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
 </head>
 <body class="bg-dark text-white">
 
@@ -16,11 +16,24 @@
 </nav>
 
 <div class="container mt-4">
+
+    {% if parcelas_proximas %}
+    <div class="alert alert-warning text-dark">
+        <strong>Atenção!</strong> Você tem {{ parcelas_proximas|length }} parcelas próximas do vencimento:
+        <ul>
+          {% for p in parcelas_proximas %}
+            <li>{{ p.cobranca.nome_cliente }} - Vence em {{ p.data_vencimento.strftime("%d/%m/%Y") }}</li>
+          {% endfor %}
+        </ul>
+    </div>
+    {% endif %}
+
     <h2 class="mb-4">Cobranças</h2>
 
-    <a href="{{ url_for('nova_cobranca') }}" class="btn btn-success mb-3">Nova Cobrança</a>
-  <a href="{{ url_for('listar_parcelas') }}" class="btn btn-info mb-3 ms-2">Ver Parcelas</a>
+    <canvas id="graficoReceita" height="150"></canvas>
 
+    <a href="{{ url_for('nova_cobranca') }}" class="btn btn-success mb-3 mt-3">Nova Cobrança</a>
+    <a href="{{ url_for('listar_parcelas') }}" class="btn btn-info mb-3 ms-2">Ver Parcelas</a>
 
     <div class="row row-cols-1 row-cols-md-2 g-4">
         {% for cobranca in cobrancas %}
@@ -46,7 +59,35 @@
     </div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+  const ctx = document.getElementById('graficoReceita').getContext('2d');
+  const graficoReceita = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: {{ meses | safe }},
+      datasets: [{
+        label: 'Receita Recebida',
+        data: {{ valores | safe }},
+        backgroundColor: 'rgba(54, 162, 235, 0.7)'
+      }]
+    },
+    options: {
+      scales: {
+        y: {
+          beginAtZero: true,
+          ticks: { color: 'white' }
+        },
+        x: {
+          ticks: { color: 'white' }
+        }
+      },
+      plugins: {
+        legend: { labels: { color: 'white' } }
+      }
+    }
+  });
+</script>
+
 </body>
 </html>
-
-
