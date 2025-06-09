@@ -1,7 +1,7 @@
 {% extends "base.html" %}
-{% block title %}Cadastro{% endblock %}
+{% block title %}Registrar{% endblock %}
 {% block content %}
-<h2>Cadastro</h2>
+<h2>Criar Conta</h2>
 <form method="POST">
     <label for="username">Usuário:</label>
     <input type="text" name="username" required>
@@ -9,7 +9,10 @@
     <label for="password">Senha:</label>
     <input type="password" name="password" required>
 
-    <button type="submit" class="btn">Cadastrar</button>
+    <label for="confirm_password">Confirmar Senha:</label>
+    <input type="password" name="confirm_password" required>
+
+    <button type="submit" class="btn">Registrar</button>
 </form>
-<p>Já tem conta? <a href="{{ url_for('login') }}">Login</a></p>
+<p>Já tem conta? <a href="{{ url_for('login') }}">Entrar</a></p>
 {% endblock %}
