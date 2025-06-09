@@ -110,13 +110,21 @@ def nova_cobranca():
         return redirect(url_for("dashboard"))
 
     return render_template("nova_cobranca.html")
-
-@app.route("/parcelas/<int:cobranca_id>")
+@app.route("/parcela/<int:parcela_id>/pagar", methods=["POST"])
 @login_required
-def visualizar_parcelas(cobranca_id):
-    parcelas = Parcela.query.filter_by(cobranca_id=cobranca_id).all()
-    cobranca = Cobranca.query.get_or_404(cobranca_id)
-    return render_template("parcelas.html", parcelas=parcelas, cobranca=cobranca)
+def marcar_parcela_paga(parcela_id):
+    parcela = Parcela.query.get_or_404(parcela_id)
+
+    # Verifica se a parcela pertence a uma cobrança do usuário logado
+    if parcela.cobranca.usuario_id != current_user.id:
+        flash("Você não tem permissão para alterar essa parcela.")
+        return redirect(url_for("dashboard"))
+
+    parcela.status = "paga"
+    db.session.commit()
+    flash("Parcela marcada como paga.")
+    return redirect(url_for("ver_parcelas", cobranca_id=parcela.cobranca_id))
+
 
 @app.route("/register", methods=["GET", "POST"])
 def register():
