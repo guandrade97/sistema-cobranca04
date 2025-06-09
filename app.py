@@ -109,7 +109,6 @@ def nova_cobranca():
         db.session.add(c)
         db.session.commit()
 
-        # Criar parcelas com vencimento mensal
         for i in range(1, parcelas + 1):
             parcela = Parcela(
                 cobranca_id=c.id,
@@ -145,6 +144,31 @@ def pagar_parcela(parcela_id):
     flash(f"Parcela {parcela.numero} marcada como paga.")
     return redirect(url_for("listar_parcelas"))
 
+@app.route("/register", methods=["GET", "POST"])
+def register():
+    if request.method == "POST":
+        username = request.form["username"]
+        password = request.form["password"]
+        confirm_password = request.form["confirm_password"]
+
+        if password != confirm_password:
+            flash("As senhas não coincidem.")
+            return redirect(url_for("register"))
+
+        existing_user = User.query.filter_by(username=username).first()
+        if existing_user:
+            flash("Nome de usuário já está em uso.")
+            return redirect(url_for("register"))
+
+        hashed_password = generate_password_hash(password, method="sha256")
+        new_user = User(username=username, password=hashed_password)
+        db.session.add(new_user)
+        db.session.commit()
+        flash("Conta criada com sucesso! Faça login.")
+        return redirect(url_for("login"))
+
+    return render_template("register.html")
+
 def enviar_cobrancas():
     hoje = date.today()
     parcelas = Parcela.query.filter_by(paga=False).all()
@@ -162,6 +186,3 @@ scheduler.start()
 
 if __name__ == "__main__":
     app.run(debug=True)
-
-
-
