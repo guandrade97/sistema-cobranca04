@@ -32,11 +32,11 @@
             <textarea class="form-control" id="descricao" name="descricao" rows="2" required></textarea>
         </div>
         <div class="mb-3">
-            <label for="valor" class="form-label">Valor (R$)</label>
-            <input type="number" step="0.01" class="form-control" id="valor" name="valor" required>
+            <label for="valor" class="form-label">Valor de cada parcela (R$)</label>
+            <input type="number" step="0.01" class="form-control" id="valor" name="valor" min="0" required>
         </div>
         <div class="mb-3">
-            <label for="parcelas" class="form-label">Parcelas</label>
+            <label for="parcelas" class="form-label">Quantidade de parcelas</label>
             <input type="number" class="form-control" id="parcelas" name="parcelas" min="1" required>
         </div>
         <div class="mb-3">
@@ -54,5 +54,3 @@
 
 </body>
 </html>
-
-
