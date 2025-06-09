@@ -16,7 +16,7 @@ login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = "login"
 
-# Models
+# MODELS
 class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(150), unique=True)
@@ -46,6 +46,7 @@ class Parcela(db.Model):
     paga = db.Column(db.Boolean, default=False)
     usuario_id = db.Column(db.Integer, db.ForeignKey('user.id'))
 
+# AUTENTICAÇÃO
 @login_manager.user_loader
 def load_user(user_id):
     try:
@@ -57,6 +58,7 @@ def load_user(user_id):
 def create_tables():
     db.create_all()
 
+# ROTAS
 @app.route("/login", methods=["GET", "POST"])
 def login():
     if request.method == "POST":
@@ -126,6 +128,35 @@ def nova_cobranca():
 
     return render_template("nova_cobranca.html")
 
+@app.route("/nova_parcela", methods=["GET", "POST"])
+@login_required
+def nova_parcela():
+    if request.method == "POST":
+        cobranca_id = request.form["cobranca_id"]
+        valor = float(request.form["valor"])
+        vencimento = request.form["vencimento"]
+
+        # Definir o número da nova parcela
+        ult_parcela = Parcela.query.filter_by(cobranca_id=cobranca_id).order_by(Parcela.numero.desc()).first()
+        numero = (ult_parcela.numero + 1) if ult_parcela else 1
+
+        nova = Parcela(
+            cobranca_id=cobranca_id,
+            numero=numero,
+            valor=valor,
+            vencimento=vencimento,
+            paga=False,
+            usuario_id=current_user.id
+        )
+        db.session.add(nova)
+        db.session.commit()
+
+        flash("Parcela adicionada com sucesso.")
+        return redirect(url_for("listar_parcelas"))
+
+    cobrancas = Cobranca.query.filter_by(usuario_id=current_user.id).all()
+    return render_template("nova_parcela.html", cobrancas=cobrancas)
+
 @app.route("/parcelas")
 @login_required
 def listar_parcelas():
@@ -169,6 +200,7 @@ def register():
 
     return render_template("register.html")
 
+# ENVIOS AUTOMÁTICOS
 def enviar_cobrancas():
     hoje = date.today()
     parcelas = Parcela.query.filter_by(paga=False).all()
@@ -180,9 +212,11 @@ def enviar_cobrancas():
             dias_atraso = abs(dias_para_vencer)
             print(f"[ATENÇÃO] Enviar mensagem para {p.cobranca.nome_cliente}: Parcela {p.numero} está vencida há {dias_atraso} dia(s).")
 
+# AGENDADOR
 scheduler = BackgroundScheduler()
 scheduler.add_job(func=enviar_cobrancas, trigger="interval", hours=24)
 scheduler.start()
 
 if __name__ == "__main__":
     app.run(debug=True)
+
