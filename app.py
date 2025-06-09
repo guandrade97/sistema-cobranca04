@@ -46,23 +46,33 @@ def create_tables():
     db.create_all()
 
 # Rotas de autenticação
-@app.route("/register", methods=["GET", "POST"])
-def register():
+@app.route("/nova_cobranca", methods=["GET", "POST"])
+@login_required
+def nova_cobranca():
     if request.method == "POST":
-        username = request.form["username"]
-        password = request.form["password"]
+        nome_cliente = request.form["nome_cliente"]
+        descricao = request.form["descricao"]
+        valor = float(request.form["valor"])
+        parcelas = int(request.form["parcelas"])
+        email = request.form["email"]
+        whatsapp = request.form["whatsapp"]
 
-        if User.query.filter_by(username=username).first():
-            flash("Usuário já existe")
-            return redirect(url_for("register"))
-
-        new_user = User(username=username, password=generate_password_hash(password, method='sha256'))
-        db.session.add(new_user)
+        c = Cobranca(
+            nome_cliente=nome_cliente,
+            descricao=descricao,
+            valor=valor,
+            parcelas=parcelas,
+            email=email,
+            whatsapp=whatsapp,
+            usuario_id=current_user.id
+        )
+        db.session.add(c)
         db.session.commit()
-        flash("Cadastro feito com sucesso! Faça login.")
-        return redirect(url_for("login"))
+        flash("Cobrança criada com sucesso!")
+        return redirect(url_for("dashboard"))
 
-    return render_template("register.html")
+    return render_template("nova_cobranca.html")
+
 
 @app.route("/login", methods=["GET", "POST"])
 def login():
