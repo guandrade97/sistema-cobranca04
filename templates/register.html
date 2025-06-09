@@ -1,18 +1,39 @@
-{% extends "base.html" %}
-{% block title %}Registrar{% endblock %}
-{% block content %}
-<h2>Criar Conta</h2>
-<form method="POST">
-    <label for="username">Usuário:</label>
-    <input type="text" name="username" required>
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Cadastro</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="bg-light d-flex align-items-center justify-content-center" style="height: 100vh;">
 
-    <label for="password">Senha:</label>
-    <input type="password" name="password" required>
+    <div class="card shadow p-4" style="width: 100%; max-width: 400px;">
+        <h3 class="text-center mb-4">Criar Conta</h3>
 
-    <label for="confirm_password">Confirmar Senha:</label>
-    <input type="password" name="confirm_password" required>
+        {% with messages = get_flashed_messages() %}
+          {% if messages %}
+            <div class="alert alert-warning" role="alert">
+              {{ messages[0] }}
+            </div>
+          {% endif %}
+        {% endwith %}
 
-    <button type="submit" class="btn">Registrar</button>
-</form>
-<p>Já tem conta? <a href="{{ url_for('login') }}">Entrar</a></p>
-{% endblock %}
+        <form method="POST">
+            <div class="mb-3">
+                <label class="form-label">Usuário</label>
+                <input type="text" class="form-control" name="username" required>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Senha</label>
+                <input type="password" class="form-control" name="password" required>
+            </div>
+            <button type="submit" class="btn btn-success w-100">Registrar</button>
+        </form>
+
+        <div class="text-center mt-3">
+            <p>Já tem conta? <a href="{{ url_for('login') }}">Faça login</a></p>
+        </div>
+    </div>
+
+</body>
+</html>
